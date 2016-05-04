@@ -5,6 +5,10 @@
 /*             See LICENSE for full restrictions                */
 /****************************************************************/
 
+/* NOTE: This file was modified for the Phase Field Hackathon III
+         problems. It is not meant for general use in the MOOSE
+         framework. */
+
 #include "InterfaceOrientationMaterial.h"
 #include "MooseMesh.h"
 
@@ -16,6 +20,8 @@ InputParameters validParams<InterfaceOrientationMaterial>()
   params.addParam<unsigned int>("mode_number", 6, "Mode number for anisotropy");
   params.addParam<Real>("reference_angle", 90, "Reference angle for defining anistropy in degrees");
   params.addParam<Real>("eps_bar", 0.01, "Average value of the interface parameter epsilon");
+  params.addParam<std::string>("mob_name", "L", "Base name of the mobility");
+  params.addParam<Real>("diffusion_coeff", 1, "Thermal Diffusion Constant Coefficient");
   params.addRequiredCoupledVar("op", "Order parameter defining the solid phase");
   return params;
 }
@@ -31,7 +37,10 @@ InterfaceOrientationMaterial::InterfaceOrientationMaterial(const InputParameters
     _depsdgrad_op(declareProperty<RealGradient>("depsdgrad_op")),
     _ddepsdgrad_op(declareProperty<RealGradient>("ddepsdgrad_op")),
     _op(coupledValue("op")),
-    _grad_op(coupledGradient("op"))
+    _grad_op(coupledGradient("op")),
+    _mob_name(getParam<std::string>("mob_name")),
+    _prop_F(&declareProperty<Real>(_mob_name)),
+    _tau0(getParam<Real>("diffusion_coeff"))
 {
   // this currently only works in 2D simulations
   if (_mesh.dimension() != 2)
@@ -80,4 +89,8 @@ InterfaceOrientationMaterial::computeQpProperties()
   // Compute derivatives of epsilon and its derivative wrt grad_op
   _depsdgrad_op[_qp] = _deps[_qp] * dangledn * dndgrad_op;
   _ddepsdgrad_op[_qp] = d2eps * dangledn * dndgrad_op;
+
+  // Compute mobility
+  if (_prop_F)
+    (*_prop_F)[_qp] = _eps_bar * _eps_bar / (_tau0 * _eps[_qp] * _eps[_qp]);
 }

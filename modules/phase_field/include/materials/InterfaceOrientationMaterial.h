@@ -8,7 +8,10 @@
 #define INTERFACEORIENTATIONMATERIAL_H
 
 #include "Material.h"
-
+#include "ParsedMaterialHelper.h"
+/*NOTE: This file was modified for the Phase Field Hackathon III
+        It is not meant for general use in the MOOSE framework. */
+        
 //Forward Declarations
 class InterfaceOrientationMaterial;
 
@@ -39,6 +42,10 @@ private:
 
   const VariableValue & _op;
   const VariableGradient & _grad_op;
+  std::string _mob_name;
+  MaterialProperty<Real> * _prop_F;
+  Real _tau0;
+
 };
 
 #endif //INTERFACEORIENTATIONMATERIAL_H
