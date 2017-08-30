@@ -10,16 +10,18 @@
 #include "GeneralUserObject.h"
 #include "GrainForceAndTorqueInterface.h"
 
-// Forward Declarations
+//Forward Declarations
 class ConstantGrainForceAndTorque;
 
-template <>
+template<>
 InputParameters validParams<ConstantGrainForceAndTorque>();
 
 /**
  * This class is here to get the force and torque acting on a grain
  */
-class ConstantGrainForceAndTorque : public GrainForceAndTorqueInterface, public GeneralUserObject
+class ConstantGrainForceAndTorque :
+    public GrainForceAndTorqueInterface,
+    public GeneralUserObject
 {
 public:
   ConstantGrainForceAndTorque(const InputParameters & parameters);
@@ -30,8 +32,8 @@ public:
 
   virtual const std::vector<RealGradient> & getForceValues() const;
   virtual const std::vector<RealGradient> & getTorqueValues() const;
-  virtual const std::vector<Real> & getForceCJacobians() const;
-  virtual const std::vector<std::vector<Real>> & getForceEtaJacobians() const;
+  virtual const std::vector<RealGradient> & getForceDerivatives() const;
+  virtual const std::vector<RealGradient> & getTorqueDerivatives() const;
 
 protected:
   /// Applied force on particles, size should be 3 times no. of grains
@@ -39,15 +41,13 @@ protected:
   /// Applied torque on particles, size should be 3 times no. of grains
   std::vector<Real> _M;
 
-  unsigned int _grain_num;
+  unsigned int _ncrys;
   unsigned int _ncomp;
 
-  ///@{ providing grain forces, torques and their jacobians w. r. t c
   std::vector<RealGradient> _force_values;
   std::vector<RealGradient> _torque_values;
-  std::vector<Real> _c_jacobians;
-  std::vector<std::vector<Real>> _eta_jacobians;
-  ///@}
+  std::vector<RealGradient> _force_derivatives;
+  std::vector<RealGradient> _torque_derivatives;
 };
 
-#endif // CONSTANTGRAINFORCEANDTORQUE_H
+#endif //CONSTANTGRAINFORCEANDTORQUE_H

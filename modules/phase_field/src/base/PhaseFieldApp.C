@@ -210,7 +210,6 @@
 /*
  * User Objects
  */
-#include "ComputeExternalGrainForceAndTorque.h"
 #include "ComputeGrainCenterUserObject.h"
 #include "ComputeGrainForceAndTorque.h"
 #include "ConservedMaskedNormalNoise.h"
@@ -489,7 +488,7 @@ PhaseFieldApp::registerObjects(Factory & factory)
   registerAux(PFCRFFEnergyDensity);
   registerAux(TotalFreeEnergy);
 
-  registerUserObject(ComputeExternalGrainForceAndTorque);
+  registerUserObject(ComputeGrainCenterUserObject);
   registerUserObject(ComputeGrainForceAndTorque);
   registerUserObject(ConservedMaskedNormalNoise);
   registerUserObject(ConservedMaskedUniformNoise);
@@ -511,6 +510,7 @@ PhaseFieldApp::registerObjects(Factory & factory)
 
   registerVectorPostprocessor(EulerAngleUpdaterCheck);
   registerVectorPostprocessor(FeatureVolumeVectorPostprocessor);
+  registerVectorPostprocessor(GrainCentersPostprocessor);
   registerVectorPostprocessor(GrainForcesPostprocessor);
   registerVectorPostprocessor(GrainTextureVectorPostprocessor);
 

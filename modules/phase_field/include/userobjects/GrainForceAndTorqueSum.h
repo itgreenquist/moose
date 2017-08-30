@@ -10,17 +10,19 @@
 #include "GrainForceAndTorqueInterface.h"
 #include "GeneralUserObject.h"
 
-// Forward Declarations
+//Forward Declarations
 class GrainForceAndTorqueSum;
 
-template <>
+template<>
 InputParameters validParams<GrainForceAndTorqueSum>();
 
 /**
  * This class is here to get the force and torque acting on a grain
  * from different userobjects and sum them all
  */
-class GrainForceAndTorqueSum : public GrainForceAndTorqueInterface, public GeneralUserObject
+class GrainForceAndTorqueSum :
+    public GrainForceAndTorqueInterface,
+    public GeneralUserObject
 {
 public:
   GrainForceAndTorqueSum(const InputParameters & parameters);
@@ -31,24 +33,24 @@ public:
 
   virtual const std::vector<RealGradient> & getForceValues() const;
   virtual const std::vector<RealGradient> & getTorqueValues() const;
-  virtual const std::vector<Real> & getForceCJacobians() const;
-  virtual const std::vector<std::vector<Real>> & getForceEtaJacobians() const;
+  virtual const std::vector<RealGradient> & getForceDerivatives() const;
+  virtual const std::vector<RealGradient> & getTorqueDerivatives() const;
 
 protected:
   /// Vector of userobjects providing forces and torques acting on grains
   std::vector<UserObjectName> _sum_objects;
   /// Total no. of userobjects that provides forces and torques acting on grains
   unsigned int _num_forces;
-  unsigned int _grain_num;
+  unsigned int _ncrys;
 
   std::vector<const GrainForceAndTorqueInterface *> _sum_forces;
 
-  ///@{ providing grain forces, torques and their jacobians w. r. t c
+  ///@{ providing sum of all grain forces, torques & their derivatives
   std::vector<RealGradient> _force_values;
   std::vector<RealGradient> _torque_values;
-  std::vector<Real> _c_jacobians;
-  std::vector<std::vector<Real>> _eta_jacobians;
+  std::vector<RealGradient> _force_derivatives;
+  std::vector<RealGradient> _torque_derivatives;
   ///@}
 };
 
-#endif // GRAINFORCEANDTORQUESUM_H
+#endif //GRAINFORCEANDTORQUESUM_H
