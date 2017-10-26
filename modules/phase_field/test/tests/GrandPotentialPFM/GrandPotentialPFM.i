@@ -8,6 +8,7 @@
   ny = 16
   xmax = 32
   ymax = 32
+  uniform_refine = 1
 []
 
 [GlobalParams]
@@ -89,6 +90,7 @@
     args = 'w'
     f_name = f1
     material_property_names = 'cl A'
+    outputs = exodus
   [../]
   [./solid_GrandPotential]
     type = DerivativeParsedMaterial
@@ -96,6 +98,7 @@
     args = 'w'
     f_name = f2
     material_property_names = 'cs A'
+    outputs = exodus
   [../]
   [./switching_function]
     type = SwitchingFunctionMaterial
@@ -114,6 +117,7 @@
     fb_name = f2
     derivative_order = 2
     W = 1.0
+    outputs = exodus
   [../]
   [./coupled_eta_function]
     type = DerivativeParsedMaterial
@@ -160,7 +164,7 @@
   nl_rel_tol = 1e-8
   nl_abs_tol = 1e-8
 
-  num_steps = 5
+  num_steps = 10
   dt = 10.0
 []
 

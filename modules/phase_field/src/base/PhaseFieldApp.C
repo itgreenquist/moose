@@ -278,6 +278,7 @@
 #include "GrainCentersPostprocessor.h"
 #include "GrainForcesPostprocessor.h"
 #include "GrainTextureVectorPostprocessor.h"
+#include "VariableValueVectorPostprocessor.h"
 
 template <>
 InputParameters
@@ -513,6 +514,7 @@ PhaseFieldApp::registerObjects(Factory & factory)
   registerVectorPostprocessor(FeatureVolumeVectorPostprocessor);
   registerVectorPostprocessor(GrainForcesPostprocessor);
   registerVectorPostprocessor(GrainTextureVectorPostprocessor);
+  registerVectorPostprocessor(VariableValueVectorPostprocessor);
 
   registerMesh(EBSDMesh);
   registerMesh(MortarPeriodicMesh);
