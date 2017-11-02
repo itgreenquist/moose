@@ -29,12 +29,12 @@ public:
 protected:
   MooseVariable & _var;
 
-  VectorPostprocessorValue _element_num;
-  VectorPostprocessorValue _pnt_x;
-  VectorPostprocessorValue _pnt_y;
-  VectorPostprocessorValue _pnt_z;
-  VectorPostprocessorValue _element_vol;
-  VectorPostprocessorValue _var_val;
+  VectorPostprocessorValue & _element_num;
+  VectorPostprocessorValue & _pnt_x;
+  VectorPostprocessorValue & _pnt_y;
+  VectorPostprocessorValue & _pnt_z;
+  VectorPostprocessorValue & _element_vol;
+  VectorPostprocessorValue & _var_val;
 private:
   MooseMesh & _mesh;
 };

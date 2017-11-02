@@ -18,6 +18,15 @@ validParams<VariableValueVectorPostprocessor>()
   return params;
 }
 
+/*
+  Current status: It works in serial and debug mode, but not in opt mode. The problem
+  seems to be in getting the nodal points. If I output the points to terminal the
+  simulation will crash mid-outpoint, which is very odd and leads me to believe the
+  problem is not with my code, but with libmesh.
+  I have rebuilt libmesh once and recompiled three times and the nature of the problem
+  does not change.
+*/
+
 VariableValueVectorPostprocessor::VariableValueVectorPostprocessor(
     const InputParameters & parameters)
   : GeneralVectorPostprocessor(parameters),
@@ -44,17 +53,17 @@ VariableValueVectorPostprocessor::execute()
   _pnt_z.resize(end);
   _element_vol.resize(end);
   _var_val.resize(end);
-  for (auto el = 0; el < end; ++el)
+  for (unsigned int el = 0; el < end; ++el)
   {
-    const auto* elem = _mesh.getMesh().elem_ptr(el); //Current element
+    Elem* elem = _mesh.getMesh().elem_ptr(el); //Current element
     auto n_node = elem->n_nodes(); //How many nodes does the element have?
     auto vol = elem->volume(); //Volume of element
 
     Point pnt; //Take the average nodal position and variable value of the element
     Real var_val = 0;
-    for (auto n = 0; n < n_node; ++n)
+    for (unsigned int n = 0; n < n_node; ++n)
     {
-      const Point& p = elem->point(n);
+      Point& p = elem->point(n);
       Real val = _var.getElementalValue(elem, n);
       pnt += p;
       var_val += val;
@@ -69,11 +78,5 @@ VariableValueVectorPostprocessor::execute()
     _pnt_z[el] = pnt(2);
     _element_vol[el] = vol;
     _var_val[el] = var_val;
-
-    //For debugging: Output the values to terminal
-    std::cout << "[" << _pnt_x[el] << ", " << _pnt_y[el] << ", " << _pnt_z[el] <<"] ";
-    std::cout << COLOR_BLUE << _element_vol[el] << " ";
-    std::cout << COLOR_RED << _var_val[el] << COLOR_DEFAULT << '\n';
   }
-  std::cout << '\n' << end << '\n';
 }
