@@ -41,6 +41,9 @@ FeatureVolumeVectorPostprocessor::FeatureVolumeVectorPostprocessor(
     _var_num(declareVector("var_num")),
     _feature_volumes(declareVector("feature_volumes")),
     _intersects_bounds(declareVector("intersects_bounds")),
+    _center_x(declareVector("centroid_x")),
+    _center_y(declareVector("centroid_y")),
+    _center_z(declareVector("centroid_z")),
     _vars(_feature_counter.getCoupledVars()),
     _mesh(_subproblem.mesh()),
     _assembly(_subproblem.assembly(_tid)),
@@ -65,6 +68,9 @@ void
 FeatureVolumeVectorPostprocessor::execute()
 {
   const auto num_features = _feature_counter.getTotalFeatureCount();
+  _center_x.resize(num_features);
+  _center_y.resize(num_features);
+  _center_z.resize(num_features);
 
   // Reset the variable index and intersect bounds vectors
   _var_num.assign(num_features, -1);           // Invalid
@@ -77,6 +83,11 @@ FeatureVolumeVectorPostprocessor::execute()
 
     _intersects_bounds[feature_num] =
         static_cast<unsigned int>(_feature_counter.doesFeatureIntersectBoundary(feature_num));
+
+    auto p = _feature_counter.featureCentroid(feature_num);
+    _center_x[feature_num] = p(0);
+    _center_y[feature_num] = p(1);
+    _center_z[feature_num] = p(2);
   }
 
   // Reset the volume vector

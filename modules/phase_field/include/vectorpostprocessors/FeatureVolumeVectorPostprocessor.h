@@ -53,6 +53,9 @@ protected:
   VectorPostprocessorValue & _var_num;
   VectorPostprocessorValue & _feature_volumes;
   VectorPostprocessorValue & _intersects_bounds;
+  VectorPostprocessorValue & _center_x;
+  VectorPostprocessorValue & _center_y;
+  VectorPostprocessorValue & _center_z;
 
 private:
   /// Add volume contributions to one or entries in the feature volume vector

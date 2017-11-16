@@ -59,17 +59,14 @@ VariableValueVectorPostprocessor::execute()
     auto n_node = elem->n_nodes(); //How many nodes does the element have?
     auto vol = elem->volume(); //Volume of element
 
-    Point pnt; //Take the average nodal position and variable value of the element
+    std::cout << COLOR_BLUE << "pre-pnt " << COLOR_DEFAULT; //TODO
+    Point pnt = elem->centroid(); //Take the average nodal position and variable value of the element
+    std::cout << COLOR_BLUE << "post-pnt " << COLOR_DEFAULT; //TODO
     Real var_val = 0;
     for (unsigned int n = 0; n < n_node; ++n)
-    {
-      Point& p = elem->point(n);
-      Real val = _var.getElementalValue(elem, n);
-      pnt += p;
-      var_val += val;
-    }
-    pnt /= n_node;
+      var_val += _var.getElementalValue(elem, n);
     var_val /= n_node;
+    std::cout << COLOR_BLUE << "post-var_val" << '\n' << COLOR_DEFAULT; //TODO
 
     //Write to VectorPostprocessor
     _element_num[el] = el;
