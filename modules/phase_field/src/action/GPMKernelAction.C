@@ -30,7 +30,7 @@ InputParameters validParams<GPMKernelAction>()
   parameters.addRequiredParam<std::vector<NonlinearVariableName> >("chemical_potentials", "List of chemical potential variables");
   parameters.addRequiredParam<std::vector<MaterialPropertyName> >("susceptibilities", "List of susceptibilities that correspond to chemical_potentials");
   parameters.addRequiredParam<std::vector<MaterialPropertyName> >("Fj_gr", "List of free energies for each phase. Place in same order as hj_names.");
-  parameters.addRequiredParam<std::vector<MaterialPropertyName> >("Fj_w", "List of functions for each phase. Place in same order as hj_names.");
+  parameters.addRequiredParam<std::vector<MaterialPropertyName> >("Fj_w", "List of functions for each phase. Length should be lenght of chemical_potentials * length of hj_names.");
   parameters.addRequiredParam<std::vector<MaterialPropertyName> >("hj_names", "Switching function materials that provide switching function for Fj_*.");
   parameters.addRequiredParam<std::vector<MaterialPropertyName> >("D", "Vector of diffusivities that must match chemical_potentials");
   parameters.addRequiredParam<unsigned int>("op_num", "specifies the number of grains to create");
@@ -41,6 +41,7 @@ InputParameters validParams<GPMKernelAction>()
   parameters.addParam<MaterialPropertyName>("kappa_op", "kappa", "The kappa used with additional_ops");
   parameters.addParam<MaterialPropertyName>("gamma_gr", "gamma", "Name of the gamma used with grains");
   parameters.addParam<MaterialPropertyName>("gamma_op", "gamma", "Name of the gamma used with additional order parameters");
+  parameters.addParam<MaterialPropertyName>("gamma_grxop", "gamma", "Name of the gamma used when grains interact with other order parameters");
   parameters.addParam<MaterialPropertyName>("gr_mob_name", "L", "Name of mobility to be used with grains");
   parameters.addParam<MaterialPropertyName>("op_mob_name", "L", "Name of mobility to be used with additional_ops");
   parameters.addParam<bool>("implicit", true, "Whether kernels are implicit or not");
@@ -72,6 +73,7 @@ GPMKernelAction::act()
   const MaterialPropertyName kappa_op = getParam<MaterialPropertyName>("kappa_op");
   const MaterialPropertyName gamma_gr = getParam<MaterialPropertyName>("gamma_gr");
   const MaterialPropertyName gamma_op = getParam<MaterialPropertyName>("gamma_op");
+  const MaterialPropertyName gamma_xx = getParam<MaterialPropertyName>("gamma_grxop");
   const MaterialPropertyName gr_mob   = getParam<MaterialPropertyName>("gr_mob_name");
   const MaterialPropertyName op_mob   = getParam<MaterialPropertyName>("op_mob_name");
   bool implicity = getParam<bool>("implicit");
@@ -80,6 +82,7 @@ GPMKernelAction::act()
 
   //Size definitions and checks
   unsigned int n_w = w_names.size();
+  unsigned int n_hj = hj.size();
   std::vector<NonlinearVariableName> etas;
   unsigned int n_etas = 0;
   std::string kernel_name;
@@ -91,11 +94,10 @@ GPMKernelAction::act()
 
   if (chis.size() != n_w)
     mooseError("susceptibilities and chemical_potentials should be vectors of the same length.");
-  if (Fj_w.size() != n_w)
-    mooseError("Fj_w and chemical_potentials should be vectors of the same length.");
+  if (Fj_w.size() != n_w * n_hj)
+    mooseError("Fj_w should be length of chemcial_potentials * length of hj_names");
   if (D.size() != n_w)
     mooseError("D and chemical_potentials should be vectors of the same length.");
-
 
   //Define additional vectors
   std::vector<std::string> grs; //vector of all grain variable names
@@ -113,12 +115,21 @@ GPMKernelAction::act()
   all_vars.insert(all_vars.end(), all_etas.begin(), all_etas.end());
   all_vars.insert(all_vars.end(), w_names.begin(), w_names.end());
 
+
+  std::vector<MaterialPropertyName> fj_temp;
+  fj_temp.resize(n_hj);
   std::vector<VariableName> notarealvector;
   notarealvector.resize(1);
   std::vector<VariableName> v0;
   v0.resize(n_etas + n_grs + n_w);
+  for (unsigned int i = 0; i < n_etas + n_grs + n_w; ++i)
+    v0[i] = all_vars[i];
   std::vector<VariableName> v1;
-  v1.resize(n_etas + n_grs - 1);
+  v1.resize(n_etas + n_grs);
+  for (unsigned int i = 0; i < n_etas + n_grs; ++i)
+    v1[i] = all_etas[i];
+  std::vector<VariableName> v2;
+  v2.resize(n_etas + n_grs - 1);
 
   //Grains and order parameters
   NonlinearVariableName var_name;
@@ -128,22 +139,21 @@ GPMKernelAction::act()
 
   for (unsigned int i = 0; i < n_etas + n_grs; ++i)
   {
+    var_name = all_etas[i];
     //Distinguish between grains and the additional order parameters
-    if (i < n_grs) //First part of list is grain variables
+    if (i < n_etas) //First part of list is grain variables
     {
-      var_name = grs[i];
-      kappa = kappa_gr;
-      mob_name = gr_mob;
-      Fj_names.resize(Fj_gr.size());
-      Fj_names = Fj_gr;
-    }
-    else //Second part of list is additional order parameters
-    {
-      var_name = etas[i-n_grs];
       kappa = kappa_op;
       mob_name = op_mob;
       Fj_names.resize(Fj_op.size());
       Fj_names = Fj_op;
+    }
+    else //Second part of list is additional order parameters
+    {
+      kappa = kappa_gr;
+      mob_name = gr_mob;
+      Fj_names.resize(Fj_gr.size());
+      Fj_names = Fj_gr;
     }
 
     //Remove var_name from coupled variables
@@ -152,19 +162,22 @@ GPMKernelAction::act()
     unsigned int op = 0;
     for (unsigned int j = 0; j < n_etas + n_grs; ++j)
     {
-      v0[j] = all_etas[j];
       if (i != j)
       {
-        v1[op] = all_etas[j];
-        if (j < n_grs)
+        v2[op] = all_etas[j];
+        if (j < n_etas)
+          gam[op] = gamma_op;
+        else
+          gam[op] = gamma_gr;
+        if (i < n_etas && j < n_etas)
+          gam[op] = gamma_op;
+        else if (i >= n_etas && j >= n_etas)
           gam[op] = gamma_gr;
         else
-          gam[op] = gamma_op;
+          gam[op] = gamma_xx;
         ++op;
       }
     }
-    for (unsigned int j = 0; j < n_w; ++j)
-      v0[n_etas + n_grs + j] = w_names[j];
 
     //TimeDerivative Kernel
     InputParameters params = _factory.getValidParams("TimeDerivative");
@@ -173,7 +186,11 @@ GPMKernelAction::act()
     params.set<bool>("use_displaced_mesh") = displaced_mesh;
     kernel_name = "DT_" + var_name;
     _problem->addKernel("TimeDerivative", kernel_name, params);
-
+    std::cout << COLOR_BLUE << kernel_name << COLOR_GREEN << '\n';
+    std::cout << "variable = " << var_name << '\n';
+    std::cout << "implicit = " << implicity << '\n';
+    std::cout << "use_dispalced_mesh = " << displaced_mesh << '\n';
+    std::cout << COLOR_DEFAULT;
     //ACInterface Kernel
     params = _factory.getValidParams("ACInterface");
     params.set<NonlinearVariableName>("variable") = var_name;
@@ -183,6 +200,13 @@ GPMKernelAction::act()
     params.set<MaterialPropertyName>("mob_name") = mob_name;
     kernel_name = "ACInt_" + var_name;
     _problem->addKernel("ACInterface", kernel_name, params);
+    std::cout << COLOR_BLUE << kernel_name << COLOR_GREEN << '\n';
+    std::cout << "variable = " << var_name << '\n';
+    std::cout << "kappa_name = " << kappa << '\n';
+    std::cout << "mob_name = " << mob_name << '\n';
+    std::cout << "implicit = " << implicity << '\n';
+    std::cout << "use_dispalced_mesh = " << displaced_mesh << '\n';
+    std::cout << COLOR_DEFAULT;
 
     //ACSwitching Kernel
     params = _factory.getValidParams("ACSwitching");
@@ -195,6 +219,24 @@ GPMKernelAction::act()
     params.set<std::vector<VariableName> >("args") = v0;
     kernel_name = "ACSwitch_" + var_name;
     _problem->addKernel("ACSwitching", kernel_name, params);
+    std::cout << COLOR_BLUE << kernel_name << COLOR_GREEN << '\n';
+    std::cout << "variable = " << var_name << '\n';
+    std::cout << "Fj_names = ";
+    for (unsigned int j = 0; j < Fj_names.size(); ++j)
+      std::cout << Fj_names[j] << " ";
+    std::cout << '\n';
+    std::cout << "hj_names = ";
+    for (unsigned int k = 0; k < hj.size(); ++k)
+      std::cout << hj[k] << " ";
+    std::cout << '\n';
+    std::cout << "mob_name = " << mob_name<< '\n';
+    std::cout << "args = ";
+    for (unsigned int k = 0; k < v0.size(); ++k)
+      std::cout << v0[k] << " ";
+    std::cout << '\n';
+    std::cout << "implicit = " << implicity << '\n';
+    std::cout << "use_dispalced_mesh = " << displaced_mesh << '\n';
+    std::cout << COLOR_DEFAULT;
 
     //ACGrGrMulti Kernel
     params = _factory.getValidParams("ACGrGrMulti");
@@ -202,10 +244,24 @@ GPMKernelAction::act()
     params.set<bool>("implicit") = implicity;
     params.set<bool>("use_displaced_mesh") = displaced_mesh;
     params.set<MaterialPropertyName>("mob_name") = mob_name;
-    params.set<std::vector<VariableName> >("v") = v1;
+    params.set<std::vector<VariableName> >("v") = v2;
     params.set<std::vector<MaterialPropertyName> >("gamma_names") = gam;
     kernel_name = "AcGrGr_" + var_name;
     _problem->addKernel("ACGrGrMulti", kernel_name, params);
+    std::cout << COLOR_BLUE << kernel_name << COLOR_GREEN << '\n';
+    std::cout << "variable = " << var_name << '\n';
+    std::cout << "mob_name = " << mob_name << '\n';
+    std::cout << "v = ";
+    for (unsigned int k = 0; k < v2.size(); ++k)
+      std::cout << v2[k] << " ";
+    std::cout << '\n';
+    std::cout << "gamma_names = ";
+    for (unsigned int k = 0; k < gam.size(); ++k)
+      std::cout << gam[k] << " ";
+    std::cout << '\n';
+    std::cout << "implicit = " << implicity << '\n';
+    std::cout << "use_dispalced_mesh = " << displaced_mesh << '\n';
+    std::cout << COLOR_DEFAULT;
   } //for (unsigned int i = 0; i < n_etas + n_grs; ++i)
 
   //Chemical Potentials
@@ -219,6 +275,12 @@ GPMKernelAction::act()
     params.set<bool>("use_displaced_mesh") = displaced_mesh;
     kernel_name = "ChiDt_" + w_names[i];
     _problem->addKernel("SusceptibilityTimeDerivative", kernel_name, params);
+    std::cout << COLOR_BLUE << kernel_name << COLOR_GREEN << '\n';
+    std::cout << "variable = " << w_names[i] << '\n';
+    std::cout << "f_name = " << chis[i] << '\n';
+    std::cout << "implicit = " << implicity << '\n';
+    std::cout << "use_dispalced_mesh = " << displaced_mesh << '\n';
+    std::cout << COLOR_DEFAULT;
 
     //MatDiffusion
     params = _factory.getValidParams("MatDiffusion");
@@ -230,21 +292,50 @@ GPMKernelAction::act()
     if (aniso)
       _problem->addKernel("MatAnisoDiffusion", kernel_name, params);
     else _problem->addKernel("MatDiffusion", kernel_name, params);
+    std::cout << COLOR_BLUE << kernel_name << COLOR_GREEN << '\n';
+    std::cout << "variable = " << w_names[i] << '\n';
+    std::cout << "D_name = " << D[i] << '\n';
+    std::cout << "implicit = " << implicity << '\n';
+    std::cout << "use_dispalced_mesh = " << displaced_mesh << '\n';
+    std::cout << COLOR_DEFAULT;
 
     //CoupledSwitchingTimeDerivative
+    for (unsigned int j = 0; j < n_hj; ++j)
+      fj_temp[j] = Fj_w[i*n_hj + j];
     for (unsigned int j = 0; j < n_etas + n_grs; ++j)
     {
       notarealvector[0] = all_etas[j];
       params = _factory.getValidParams("CoupledSwitchingTimeDerivative");
       params.set<NonlinearVariableName>("variable") = w_names[i];
       params.set<std::vector<VariableName> >("v") = notarealvector;
-      params.set<std::vector<VariableName> >("args") = v0;
-      params.set<std::vector<MaterialPropertyName> >("Fj_names") = Fj_w;
+      params.set<std::vector<VariableName> >("args") = v1;
+      params.set<std::vector<MaterialPropertyName> >("Fj_names") = fj_temp;
       params.set<std::vector<MaterialPropertyName> >("hj_names") = hj;
       params.set<bool>("implicit") = implicity;
       params.set<bool>("use_displace_mesh") = displaced_mesh;
       kernel_name = "Coupled_" + w_names[i] + "_" + all_etas[j];
       _problem->addKernel("CoupledSwitchingTimeDerivative", kernel_name, params);
+      std::cout << COLOR_BLUE << kernel_name << COLOR_GREEN << '\n';
+      std::cout << "variable = " << w_names[i] << '\n';
+      std::cout << "v = ";
+      for (unsigned int k = 0; k < notarealvector.size(); ++k)
+        std::cout << notarealvector[k] << " ";
+      std::cout << '\n';
+      std::cout << "args = ";
+      for (unsigned int k = 0; k < v1.size(); ++k)
+        std::cout << v1[k] << " ";
+      std::cout << '\n';
+      std::cout << "Fj_names = ";
+      for (unsigned int k = 0; k < fj_temp.size(); ++k)
+        std::cout << fj_temp[k] << " ";
+      std::cout << '\n';
+      std::cout << "hj_names = ";
+      for (unsigned int k = 0; k < hj.size(); ++k)
+        std::cout << hj[k] << " ";
+      std::cout << '\n';
+      std::cout << "implicit = " << implicity << '\n';
+      std::cout << "use_dispalced_mesh = " << displaced_mesh << '\n';
+      std::cout << COLOR_DEFAULT;
     }
   }
 } //GPMKernelAction::act()
