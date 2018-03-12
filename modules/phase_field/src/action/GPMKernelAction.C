@@ -271,6 +271,7 @@ GPMKernelAction::act()
     InputParameters params = _factory.getValidParams("SusceptibilityTimeDerivative");
     params.set<NonlinearVariableName>("variable") = w_names[i];
     params.set<MaterialPropertyName>("f_name") = chis[i];
+    params.set<std::vector<VariableName> >("args") = v1;
     params.set<bool>("implicit") = implicity;
     params.set<bool>("use_displaced_mesh") = displaced_mesh;
     kernel_name = "ChiDt_" + w_names[i];
@@ -278,6 +279,9 @@ GPMKernelAction::act()
     std::cout << COLOR_BLUE << kernel_name << COLOR_GREEN << '\n';
     std::cout << "variable = " << w_names[i] << '\n';
     std::cout << "f_name = " << chis[i] << '\n';
+    std::cout << "args = ";
+    for (unsigned int k = 0; k < v1.size(); ++k)
+      std::cout << v1[k] << " ";
     std::cout << "implicit = " << implicity << '\n';
     std::cout << "use_dispalced_mesh = " << displaced_mesh << '\n';
     std::cout << COLOR_DEFAULT;

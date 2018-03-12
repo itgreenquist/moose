@@ -11,4 +11,7 @@ public:
   virtual void act();
 
 };
+
+template <>
+InputParameters validParams<GPMKernelAction>();
 #endif //GPMKERNELACTION
