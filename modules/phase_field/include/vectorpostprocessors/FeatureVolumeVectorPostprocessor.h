@@ -48,6 +48,7 @@ public:
 protected:
   /// A Boolean indicating how the volume is calculated
   const bool _single_feature_per_elem;
+  const bool _output_centroids;
 
   /// A reference to the feature flood count object
   const FeatureFloodCount & _feature_counter;
@@ -55,9 +56,6 @@ protected:
   VectorPostprocessorValue & _var_num;
   VectorPostprocessorValue & _feature_volumes;
   VectorPostprocessorValue & _intersects_bounds;
-  VectorPostprocessorValue & _center_x;
-  VectorPostprocessorValue & _center_y;
-  VectorPostprocessorValue & _center_z;
 
 private:
   /// Add volume contributions to one or entries in the feature volume vector
