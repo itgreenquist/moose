@@ -38,6 +38,7 @@ protected:
 
   /// Values of gammas for each order parameter
   std::vector<const MaterialProperty<Real> *> _prop_gammas;
+  const MaterialProperty<Real>& _mu;
 };
 
 #endif // ACGRGRMULTI_H

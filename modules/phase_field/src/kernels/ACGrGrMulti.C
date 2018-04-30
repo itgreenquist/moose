@@ -21,6 +21,7 @@ validParams<ACGrGrMulti>()
       "gamma_names",
       "List of gamma material property names for each other order parameter. Place "
       "in same order as order parameters (v)!");
+  params.addParam<MaterialPropertyName>("en_barr", "mu", "Energy Barrier Coefficient");
   return params;
 }
 
@@ -28,7 +29,8 @@ ACGrGrMulti::ACGrGrMulti(const InputParameters & parameters)
   : ACGrGrBase(parameters),
     _gamma_names(getParam<std::vector<MaterialPropertyName>>("gamma_names")),
     _num_j(_gamma_names.size()),
-    _prop_gammas(_num_j)
+    _prop_gammas(_num_j),
+    _mu(getMaterialProperty<Real>("en_barr"))
 {
   // check passed in parameter vectors
   if (_num_j != coupledComponents("v"))

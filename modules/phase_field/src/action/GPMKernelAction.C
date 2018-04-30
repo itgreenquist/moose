@@ -44,6 +44,8 @@ InputParameters validParams<GPMKernelAction>()
   parameters.addParam<MaterialPropertyName>("gamma_grxop", "gamma", "Name of the gamma used when grains interact with other order parameters");
   parameters.addParam<MaterialPropertyName>("gr_mob_name", "L", "Name of mobility to be used with grains");
   parameters.addParam<MaterialPropertyName>("op_mob_name", "L", "Name of mobility to be used with additional_ops");
+  parameters.addParam<MaterialPropertyName>("en_barr_gr", "mu", "Name of energy barrier coefficient used for grains");
+  parameters.addParam<MaterialPropertyName>("en_barr_op", "mu", "Name of energy barrier coefficient used for additional_ops");
   parameters.addParam<bool>("implicit", true, "Whether kernels are implicit or not");
   parameters.addParam<bool>("use_displaced_mesh", false, "Whether to use displaced mesh in the kernels");
   parameters.addParam<bool>("anisotropic", false, "Set to true if the diffusivity is a tensor");
@@ -76,6 +78,8 @@ GPMKernelAction::act()
   const MaterialPropertyName gamma_xx = getParam<MaterialPropertyName>("gamma_grxop");
   const MaterialPropertyName gr_mob   = getParam<MaterialPropertyName>("gr_mob_name");
   const MaterialPropertyName op_mob   = getParam<MaterialPropertyName>("op_mob_name");
+  const MaterialPropertyName en_barr_gr = getParam<MaterialPropertyName>("en_barr_gr");
+  const MaterialPropertyName en_barr_op = getParam<MaterialPropertyName>("en_barr_op");
   bool implicity = getParam<bool>("implicit");
   bool displaced_mesh = getParam<bool>("use_displaced_mesh");
   bool aniso = getParam<bool>("anisotropic");
@@ -135,6 +139,7 @@ GPMKernelAction::act()
   NonlinearVariableName var_name;
   MaterialPropertyName kappa;
   MaterialPropertyName mob_name;
+  MaterialPropertyName en_barr;
   std::vector<MaterialPropertyName> Fj_names;
 
   for (unsigned int i = 0; i < n_etas + n_grs; ++i)
@@ -145,6 +150,7 @@ GPMKernelAction::act()
     {
       kappa = kappa_op;
       mob_name = op_mob;
+      en_barr = en_barr_op;
       Fj_names.resize(Fj_op.size());
       Fj_names = Fj_op;
     }
@@ -152,6 +158,7 @@ GPMKernelAction::act()
     {
       kappa = kappa_gr;
       mob_name = gr_mob;
+      en_barr = en_barr_gr;
       Fj_names.resize(Fj_gr.size());
       Fj_names = Fj_gr;
     }
@@ -246,6 +253,7 @@ GPMKernelAction::act()
     params.set<MaterialPropertyName>("mob_name") = mob_name;
     params.set<std::vector<VariableName> >("v") = v2;
     params.set<std::vector<MaterialPropertyName> >("gamma_names") = gam;
+    params.set<MaterialPropertyName>("en_barr") = en_barr;
     kernel_name = "AcGrGr_" + var_name;
     _problem->addKernel("ACGrGrMulti", kernel_name, params);
     std::cout << COLOR_BLUE << kernel_name << COLOR_GREEN << '\n';
@@ -259,6 +267,7 @@ GPMKernelAction::act()
     for (unsigned int k = 0; k < gam.size(); ++k)
       std::cout << gam[k] << " ";
     std::cout << '\n';
+    std::cout << "en_barr = " << en_barr << '\n';
     std::cout << "implicit = " << implicity << '\n';
     std::cout << "use_dispalced_mesh = " << displaced_mesh << '\n';
     std::cout << COLOR_DEFAULT;
