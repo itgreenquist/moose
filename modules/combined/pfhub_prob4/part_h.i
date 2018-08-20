@@ -1,13 +1,13 @@
 [Mesh]
   type = GeneratedMesh
   dim = 2
-  xmin = -200
-  xmax = 200
-  ymin = -200
-  ymax = 200
-  nx = 50
-  ny = 50
-  uniform_refine = 1
+  xmin = -750
+  xmax = 750
+  ymin = -750
+  ymax = 750
+  nx = 94
+  ny = 94
+  uniform_refine = 2
 []
 
 [MeshModifiers]
@@ -25,13 +25,15 @@
 [Variables]
   [./eta]
     [./InitialCondition]
-      type = SmoothCircleIC
+      type = SmoothSuperellipsoidIC
       variable = eta
+      a = 83.333
+      b = 67.5
+      n = 2
+      invalue = 1.0
+      outvalue = 0.0065
       x1 = 0
       y1 = 0
-      radius = 20
-      invalue = 1
-      outvalue = 0.0065
     [../]
   [../]
   [./w]
@@ -155,7 +157,7 @@
   [../]
   [./C_pre]
     type = ComputeElasticityTensor
-    C_ijkl = '250 150 0 0 0 0 0 0 100'
+    C_ijkl = '275 165 0 0 0 0 0 0 110'
     fill_method = symmetric9
     base_name = C_pre
   [../]
@@ -260,8 +262,8 @@
   nl_rel_tol = 1.0e-8
   nl_abs_tol = 1.0e-7
   start_time = 0
-  end_time = 60000
-  num_steps = 1000
+  end_time = 600000
+  num_steps = 2000
   steady_state_detection = true
   steady_state_tolerance = 1e-06
   [./TimeStepper]
@@ -272,7 +274,7 @@
   [./Adaptivity]
     refine_fraction = 0.99
     coarsen_fraction = 0.01
-    max_h_level = 3
+    max_h_level = 4
     initial_adaptivity = 2
     weight_names = 'eta w disp_x disp_y'
     weight_values = '1 1 0 0'
@@ -287,6 +289,6 @@
   [./console]
     type = Console
     output_file = true
-    file_base = part_a_log
+    file_base = part_h_log
   [../]
 []

@@ -155,7 +155,7 @@
   [../]
   [./C_pre]
     type = ComputeElasticityTensor
-    C_ijkl = '250 150 0 0 0 0 0 0 100'
+    C_ijkl = '275 165 0 0 0 0 0 0 110'
     fill_method = symmetric9
     base_name = C_pre
   [../]
@@ -287,6 +287,6 @@
   [./console]
     type = Console
     output_file = true
-    file_base = part_a_log
+    file_base = part_c_log
   [../]
 []

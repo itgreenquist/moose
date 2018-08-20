@@ -25,13 +25,15 @@
 [Variables]
   [./eta]
     [./InitialCondition]
-      type = SmoothCircleIC
+      type = SmoothSuperellipsoidIC
       variable = eta
+      a = 22.222
+      b = 18
+      n = 2
+      invalue = 1.0
+      outvalue = 0.0065
       x1 = 0
       y1 = 0
-      radius = 20
-      invalue = 1
-      outvalue = 0.0065
     [../]
   [../]
   [./w]
@@ -155,7 +157,7 @@
   [../]
   [./C_pre]
     type = ComputeElasticityTensor
-    C_ijkl = '250 150 0 0 0 0 0 0 100'
+    C_ijkl = '275 165 0 0 0 0 0 0 110'
     fill_method = symmetric9
     base_name = C_pre
   [../]
@@ -287,6 +289,6 @@
   [./console]
     type = Console
     output_file = true
-    file_base = part_a_log
+    file_base = part_g_log
   [../]
 []
