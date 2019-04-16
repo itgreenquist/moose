@@ -143,6 +143,7 @@
 [Postprocessors]
   [./memory]
     type = MemoryUsage
+    mem_type = physical_memory
   [../]
   [./solid_area]
     type = ElementIntegralMaterialProperty

@@ -280,6 +280,7 @@
   [../]
   [./memory]
     type = MemoryUsage
+    mem_type = physical_memory
   [../]
   [./time_alive]
     type = PerformanceData

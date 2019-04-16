@@ -239,6 +239,10 @@
     type = ElementIntegralMaterialProperty
     mat_prop = f_grad
   [../]
+  [./memory]
+    type = MemoryUsage
+    mem_type = physical_memory
+  [../]
 []
 
 [Preconditioning]

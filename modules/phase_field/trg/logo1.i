@@ -11,11 +11,11 @@
 [Mesh]
   type = GeneratedMesh
   dim = 2
-  xmax = 200
-  ymax = 200
-  nx = 50
-  ny = 50
-  uniform_refine = 2
+  xmax = 700
+  ymax = 230
+  nx = 175
+  ny = 58
+  uniform_refine = 1
 []
 
 [Variables]
@@ -33,6 +33,16 @@
     family = MONOMIAL
   [../]
   [./bnds]
+  [../]
+[]
+
+[Functions]
+  [./lab_logo]
+    type = ImageFunction
+    file = TRG.png
+    threshold = 5
+    lower_value = 0
+    upper_value = 1.0
   [../]
 []
 
@@ -148,78 +158,45 @@
   [../]
 []
 
-[BCs]
-  [./Periodic]
-    [./all]
-      auto_direction = 'x y'
-      variable = 'c w eta0 eta1 eta2 eta3'
-    [../]
-  [../]
-[]
-
-[Functions]
-  [./IC_c]
-    type = ParsedFunction
-    vars = 'c0 eps'
-    vals = '0.5 0.05'
-    value = 'c0 + eps*(cos(0.105*x)*cos(0.11*y) + (cos(0.13*x)*cos(0.087*y))^2 +
-             cos(0.025*x-0.15*y)*cos(0.07*x-0.02*y))'
-  [../]
-  [./IC_eta0]
-    type = ParsedFunction
-    vars = 'eps psi i'
-    vals = '0.1 1.5 1'
-    value = 'eps*(cos((0.01*i)*x-4)*cos((0.007+0.01*i)*y) + cos((0.11+0.01*i)*x)*cos((0.11+0.01*i)*y) +
-             psi*(cos((0.046+0.001*i)*x+(0.0405+0.001*i)*y)*cos((0.031+0.001*i)*x-(0.004+0.001*i)*y))^2)^2'
-  [../]
-  [./IC_eta1]
-    type = ParsedFunction
-    vars = 'eps psi i'
-    vals = '0.1 1.5 2'
-    value = 'eps*(cos((0.01*i)*x-4)*cos((0.007+0.01*i)*y) + cos((0.11+0.01*i)*x)*cos((0.11+0.01*i)*y) +
-             psi*(cos((0.046+0.001*i)*x+(0.0405+0.001*i)*y)*cos((0.031+0.001*i)*x-(0.004+0.001*i)*y))^2)^2'
-  [../]
-  [./IC_eta2]
-    type = ParsedFunction
-    vars = 'eps psi i'
-    vals = '0.1 1.5 3'
-    value = 'eps*(cos((0.01*i)*x-4)*cos((0.007+0.01*i)*y) + cos((0.11+0.01*i)*x)*cos((0.11+0.01*i)*y) +
-             psi*(cos((0.046+0.001*i)*x+(0.0405+0.001*i)*y)*cos((0.031+0.001*i)*x-(0.004+0.001*i)*y))^2)^2'
-  [../]
-  [./IC_eta3]
-    type = ParsedFunction
-    vars = 'eps psi i'
-    vals = '0.1 1.5 4'
-    value = 'eps*(cos((0.01*i)*x-4)*cos((0.007+0.01*i)*y) + cos((0.11+0.01*i)*x)*cos((0.11+0.01*i)*y) +
-             psi*(cos((0.046+0.001*i)*x+(0.0405+0.001*i)*y)*cos((0.031+0.001*i)*x-(0.004+0.001*i)*y))^2)^2'
-  [../]
-[]
-
 [ICs]
   [./c_IC]
-    type = FunctionIC
+    type = SpecifiedSmoothCircleIC
     variable = c
-    function = IC_c
+    invalue = 0.8
+    outvalue = 0.4
+    radii = '50 50 50 50 50 50 50 50'
+    x_positions = '87.5 262.5 437.5 612.5 87.5 262.5 437.5 612.5'
+    y_positions = '57.5 57.5 57.5 57.5 172.5 172.5 172.5 172.5'
+    z_positions = '0 0 0 0 0 0 0 0'
+    int_width = 10
   [../]
   [./eta0_IC]
-    type = FunctionIC
+    type = RandomIC
     variable = eta0
-    function = IC_eta0
+    min = 0.1
+    max = 1.0
+    seed = 1688
   [../]
   [./eta1_IC]
-    type = FunctionIC
+    type = RandomIC
     variable = eta1
-    function = IC_eta1
+    min = 0.9
+    max = 1.0
+    seed = 6788
   [../]
   [./eta2_IC]
-    type = FunctionIC
+    type = RandomIC
     variable = eta2
-    function = IC_eta2
+    min = 0.9
+    max = 1.0
+    seed = 52912
   [../]
   [./eta3_IC]
-    type = FunctionIC
+    type = RandomIC
     variable = eta3
-    function = IC_eta3
+    min = 0.9
+    max = 1.0
+    seed = 91416
   [../]
 []
 
@@ -268,13 +245,36 @@
                 g0a + g1a + g2a + g3a + alpha*(g0b + g1b + g2b + g3b)'
     derivative_order = 2
   [../]
-  [./f_chem]
+  [./f_chem_1]
     type = DerivativeParsedMaterial
     material_property_names = 'omega f_alpha(c) f_beta(c) h(eta0,eta1,eta2,eta3) g(eta0,eta1,eta2,eta3)'
     args = 'c eta0 eta1 eta2 eta3'
-    f_name = f_chem
+    f_name = f_chem_1
     function = 'f_alpha*(1-h) + f_beta*h + omega*g'
     derivative_order = 2
+    outputs = exodus
+  [../]
+  [./logo]
+    type = GenericFunctionMaterial
+    prop_names = 'logo'
+    prop_values = 'lab_logo'
+  [../]
+  [./f_logo]
+    type = DerivativeParsedMaterial
+    material_property_names = 'logo c_alpha c_beta'
+    args = 'c'
+    derivative_order = 2
+    f_name = f_logo
+    function = '0.4 * ((c - c_alpha)^2 * logo + (c - c_beta)^2 * (1 - logo))'
+    outputs = exodus
+  [../]
+  [./f_chem]
+    type = DerivativeSumMaterial
+    args = 'c eta0 eta1 eta2 eta3'
+    f_name = f_chem
+    derivative_order = 2
+    sum_materials = 'f_chem_1 f_logo'
+    outputs = exodus
   [../]
 []
 
@@ -289,7 +289,6 @@
   [../]
   [./memory]
     type = MemoryUsage
-    mem_type = physical_memory
   [../]
   [./time_alive]
     type = PerformanceData
@@ -311,7 +310,7 @@
 [Executioner]
   type = Transient
   scheme = bdf2
-  solve_type = NEWTON
+  solve_type = PJFNK
   #petsc_options_iname = '-pc_type -pc_hypre_type -ksp_gmres_restart -mat_mffd_type'
   #petsc_options_value = 'hypre    boomeramg      31                 ds'
   petsc_options_iname = '-pc_type -ksp_gmres_restart -sub_ksp_type -sub_pc_type -pc_asm_overlap'
@@ -333,17 +332,17 @@
   [../]
   [./Adaptivity]
     initial_adaptivity = 0
-    max_h_level = 2
+    max_h_level = 1
     refine_fraction = 0.8
     coarsen_fraction = 0.1
-    start_time = 0.1
+    start_time = 0.3
   [../]
 []
 
 [Outputs]
   exodus = true
   csv = true
-  print_perf_log = true
+  perf_graph = true
   [./log]
     type = Console
     output_file = true
